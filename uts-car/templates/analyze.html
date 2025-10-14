@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dataset Regression Analysis</title>
+    <style>
+        body {
+            font-family: 'Segoe UI';
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #333;
+            padding: 40px;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 700px;
+            margin: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        h1 { text-align: center; color: #667eea; }
+        input[type="file"] {
+            display: block;
+            margin: 20px auto;
+            padding: 10px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: block;
+            margin: auto;
+        }
+        .result {
+            margin-top: 30px;
+            text-align: center;
+        }
+        img {
+            margin-top: 20px;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+        .error { color: red; text-align: center; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Dataset Regression Analysis</h1>
+        <p style="text-align:center;">Upload CSV (columns: <strong>years_exp</strong>, <strong>salary</strong>)</p>
+
+        <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="csv_file" accept=".csv" required>
+            <button type="submit">Analyze Dataset</button>
+        </form>
+
+        {% if regression_info %}
+        <div class="result">
+            <h3>Regression Results</h3>
+            <p><strong>Coefficient:</strong> {{ regression_info.coef | round(3) }}</p>
+            <p><strong>Intercept:</strong> {{ regression_info.intercept | round(3) }}</p>
+            <p><strong>R² Score:</strong> {{ regression_info.r2 | round(3) }}</p>
+            <p><strong>Samples:</strong> {{ regression_info.n_samples }}</p>
+
+            {% if plot_path %}
+            <img src="{{ url_for('static', filename='plots/regression_plot.png') }}" alt="Regression Plot">
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salary Prediction System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result-container {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-radius: 15px;
+            display: none;
+            animation: slideIn 0.5s;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-title {
+            color: #667eea;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .salary-amount {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #764ba2;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .input-summary {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .input-summary p {
+            margin: 8px 0;
+            color: #555;
+            font-size: 0.95em;
+        }
+
+        .input-summary strong {
+            color: #333;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💰 Salary Predictor</h1>
+        <p class="subtitle">Predict your salary based on your profile</p>
+
+        <form id="predictionForm">
+            <div class="form-group">
+                <label for="age">Age</label>
+                <input type="number" id="age" name="age" min="18" max="70" required placeholder="e.g., 30">
+            </div>
+
+            <div class="form-group">
+                <label for="gender">Gender</label>
+                <select id="gender" name="gender" required>
+                    <option value="">Select gender</option>
+                    <option value="0">Female</option>
+                    <option value="1">Male</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="education">Education Level</label>
+                <select id="education" name="education" required>
+                    <option value="">Select education</option>
+                    <option value="0">Bachelor's Degree</option>
+                    <option value="1">Master's Degree</option>
+                    <option value="2">PhD</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="years_exp">Years of Experience</label>
+                <input type="number" id="years_exp" name="years_exp" min="0" max="50" required placeholder="e.g., 5">
+            </div>
+
+            <button type="submit">Predict Salary</button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Calculating your predicted salary...</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="result-container" id="result">
+            <div class="result-title">🎯 Predicted Annual Salary</div>
+            <div class="salary-amount" id="salaryAmount">$0</div>
+            <div class="input-summary" id="inputSummary"></div>
+
+            <!-- 🟣 Tambahan visualisasi regresi -->
+            {% if plot_path %}
+            <div style="text-align:center; margin-top:30px;">
+                <h3>📊 Regression Visualization</h3>
+                <img src="{{ url_for('static', filename='plots/regression_plot.png') }}"
+                     alt="Regression Plot"
+                     style="width:80%; max-width:700px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.2);">
+            </div>
+            {% endif %}
+            <!-- 🟣 Selesai -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const age = parseInt(document.getElementById('age').value);
+            const gender = parseInt(document.getElementById('gender').value);
+            const education = parseInt(document.getElementById('education').value);
+            const years_exp = parseInt(document.getElementById('years_exp').value);
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        age: age,
+                        gender: gender,
+                        education: education,
+                        years_exp: years_exp
+                    })
+                });
+
+                const data = await response.json();
+                document.getElementById('loading').style.display = 'none';
+
+                if (response.ok) {
+                    const salary = data.salary_prediction;
+                    document.getElementById('salaryAmount').textContent = 
+                        '$' + Math.round(salary).toLocaleString();
+
+                    const genderText = gender === 1 ? 'Male' : 'Female';
+                    const educationText = ['Bachelor\'s', 'Master\'s', 'PhD'][education];
+
+                    document.getElementById('inputSummary').innerHTML = `
+                        <p><strong>Age:</strong> ${age} years</p>
+                        <p><strong>Gender:</strong> ${genderText}</p>
+                        <p><strong>Education:</strong> ${educationText}</p>
+                        <p><strong>Experience:</strong> ${years_exp} years</p>
+                    `;
+
+                    document.getElementById('result').style.display = 'block';
+                } else {
+                    throw new Error(data.error || 'Prediction failed');
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').textContent =
+                    'Error: ' + error.message + '. Please try again.';
+                document.getElementById('error').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

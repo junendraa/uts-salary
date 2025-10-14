@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Analyze Dataset (Standalone)</title>
+  <style>
+    body{font-family: Arial; padding:30px; background:#f6f8fa}
+    .card{background:white; padding:20px; border-radius:8px; max-width:800px; margin: auto; box-shadow:0 6px 20px rgba(0,0,0,0.08)}
+    input[type=file]{display:block; margin-bottom:10px}
+    img{max-width:100%; border-radius:8px; margin-top:10px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>📊 Upload CSV untuk Regresi Linear</h2>
+    <p>CSV harus punya kolom: <code>years_exp</code>, <code>salary</code></p>
+    <form method="post" enctype="multipart/form-data">
+      <input type="file" name="csv_file" accept=".csv" required>
+      <button type="submit">Analyze</button>
+    </form>
+
+    {% if error %}
+      <div style="color:#b71c1c; margin-top:12px"><strong>Error:</strong> {{ error }}</div>
+    {% endif %}
+
+    {% if regression_info %}
+      <h3 style="margin-top:18px">Hasil Regresi</h3>
+      <ul>
+        <li><b>Koefisien (slope):</b> {{ regression_info.coef | round(4) }}</li>
+        <li><b>Intercept:</b> {{ regression_info.intercept | round(2) }}</li>
+        <li><b>R²:</b> {{ regression_info.r2 | round(4) }}</li>
+        <li><b>Jumlah sampel:</b> {{ regression_info.n_samples }}</li>
+      </ul>
+
+      {% if plot_path %}
+        <h4>Visualisasi</h4>
+        <img src="{{ plot_path }}" alt="Regression Plot">
+      {% endif %}
+    {% endif %}
+  </div>
+</body>
+</html>
