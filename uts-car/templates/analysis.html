@@ -1,0 +1,470 @@
+{% extends "base.html" %}
+
+{% block title %}CSV Linear Regression Analysis{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        padding: 40px;
+        max-width: 1000px;
+        width: 100%;
+    }
+
+    h1 {
+        color: #667eea;
+        text-align: center;
+        margin-bottom: 10px;
+        font-size: 2em;
+    }
+
+    .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 0.9em;
+    }
+
+    .upload-area {
+        border: 3px dashed #667eea;
+        border-radius: 15px;
+        padding: 40px;
+        text-align: center;
+        background: #f8f9fa;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 20px;
+    }
+
+    .upload-area:hover {
+        background: #e8eaf6;
+        border-color: #764ba2;
+    }
+
+    .upload-icon {
+        font-size: 4em;
+        margin-bottom: 10px;
+    }
+
+    input[type="file"] {
+        display: none;
+    }
+
+    button {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin-top: 10px;
+    }
+
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .loading {
+        display: none;
+        text-align: center;
+        margin: 30px 0;
+        color: #667eea;
+    }
+
+    .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .error {
+        background: #fee;
+        color: #c33;
+        padding: 15px;
+        border-radius: 10px;
+        margin: 20px 0;
+        display: none;
+    }
+
+    .results {
+        display: none;
+        margin-top: 30px;
+    }
+
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+    }
+
+    .metric-card {
+        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+    }
+
+    .metric-label {
+        font-size: 0.9em;
+        color: #666;
+        margin-bottom: 5px;
+    }
+
+    .metric-value {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #667eea;
+    }
+
+    .section-title {
+        font-size: 1.3em;
+        color: #333;
+        margin: 30px 0 15px 0;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #667eea;
+    }
+
+    .coef-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+    }
+
+    .coef-table th,
+    .coef-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .coef-table th {
+        background: #667eea;
+        color: white;
+        font-weight: 600;
+    }
+
+    .coef-table tr:hover {
+        background: #f8f9fa;
+    }
+
+    .chart-container {
+        margin: 20px 0;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    canvas {
+        max-width: 100%;
+        height: auto !important;
+    }
+
+    .info-box {
+        background: #e3f2fd;
+        padding: 15px;
+        border-radius: 10px;
+        margin: 20px 0;
+        border-left: 4px solid #2196f3;
+    }
+
+    .info-box p {
+        margin: 5px 0;
+        color: #1976d2;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>📊 CSV Linear Regression Analysis</h1>
+    <p class="subtitle">Upload your CSV file to generate regression analysis and visualizations</p>
+
+    <div class="upload-area" id="uploadArea">
+        <div class="upload-icon">📁</div>
+        <h3>Drop your CSV file here or click to browse</h3>
+        <p style="color: #888; margin-top: 10px;">CSV should contain numeric columns for regression analysis</p>
+        <input type="file" id="fileInput" accept=".csv">
+    </div>
+
+    <div id="fileName" style="display: none; text-align: center; margin: 10px 0; color: #667eea; font-weight: bold;"></div>
+
+    <button id="analyzeBtn" disabled>Analyze CSV</button>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Analyzing your data...</p>
+    </div>
+
+    <div class="error" id="error"></div>
+
+    <div class="results" id="results">
+        <div class="info-box" id="dataInfo"></div>
+
+        <div class="section-title">📈 Model Performance</div>
+        <div class="metric-grid" id="metrics"></div>
+
+        <div class="section-title">🔢 Regression Coefficients</div>
+        <table class="coef-table" id="coefTable"></table>
+
+        <div class="section-title">📊 Visualizations</div>
+        <div class="chart-container">
+            <canvas id="scatterChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <canvas id="residualChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    let selectedFile = null;
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+
+    // Click to upload
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    // File selected
+    fileInput.addEventListener('change', (e) => {
+        selectedFile = e.target.files[0];
+        if (selectedFile) {
+            document.getElementById('fileName').textContent = `Selected: ${selectedFile.name}`;
+            document.getElementById('fileName').style.display = 'block';
+            analyzeBtn.disabled = false;
+        }
+    });
+
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].name.endsWith('.csv')) {
+            selectedFile = files[0];
+            fileInput.files = files;
+            document.getElementById('fileName').textContent = `Selected: ${selectedFile.name}`;
+            document.getElementById('fileName').style.display = 'block';
+            analyzeBtn.disabled = false;
+        }
+    });
+
+    // Analyze button
+    analyzeBtn.addEventListener('click', async () => {
+        if (!selectedFile) return;
+
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('results').style.display = 'none';
+        document.getElementById('error').style.display = 'none';
+
+        try {
+            const response = await fetch('/analyze', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            document.getElementById('loading').style.display = 'none';
+
+            if (response.ok && data.success) {
+                displayResults(data.results);
+            } else {
+                throw new Error(data.error || 'Analysis failed');
+            }
+        } catch (error) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').textContent = 'Error: ' + error.message;
+            document.getElementById('error').style.display = 'block';
+        }
+    });
+
+    function displayResults(results) {
+        // Data Info
+        document.getElementById('dataInfo').innerHTML = `
+            <p><strong>📊 Dataset:</strong> ${results.n_samples} samples, ${results.n_features} features</p>
+            <p><strong>🎯 Target:</strong> ${results.target_name}</p>
+            <p><strong>📐 Features:</strong> ${results.feature_names.join(', ')}</p>
+        `;
+
+        // Metrics
+        document.getElementById('metrics').innerHTML = `
+            <div class="metric-card">
+                <div class="metric-label">Training R²</div>
+                <div class="metric-value">${results.train_r2.toFixed(4)}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Test R²</div>
+                <div class="metric-value">${results.test_r2.toFixed(4)}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Test RMSE</div>
+                <div class="metric-value">${results.test_rmse.toFixed(2)}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Test MAE</div>
+                <div class="metric-value">${results.test_mae.toFixed(2)}</div>
+            </div>
+        `;
+
+        // Coefficients Table
+        let tableHTML = '<thead><tr><th>Feature</th><th>Coefficient</th><th>Impact</th></tr></thead><tbody>';
+        tableHTML += `<tr><td><strong>Intercept</strong></td><td>${results.intercept.toFixed(2)}</td><td>Base value</td></tr>`;
+        
+        for (const [feature, coef] of Object.entries(results.coefficients)) {
+            const impact = coef > 0 ? '↑ Positive' : '↓ Negative';
+            tableHTML += `<tr><td>${feature}</td><td>${coef.toFixed(4)}</td><td>${impact}</td></tr>`;
+        }
+        tableHTML += '</tbody>';
+        document.getElementById('coefTable').innerHTML = tableHTML;
+
+        // Scatter Plot
+        createScatterPlot(results.predictions);
+
+        // Residual Plot
+        createResidualPlot(results.predictions);
+
+        document.getElementById('results').style.display = 'block';
+    }
+
+    function createScatterPlot(predictions) {
+    	const ctx = document.getElementById('scatterChart');
+    
+    // Destroy existing chart if any
+    if (window.scatterChart instanceof Chart) {
+        window.scatterChart.destroy();
+    }
+
+        window.scatterChart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Test Set',
+                    data: predictions.test.actual.map((actual, i) => ({
+                        x: actual,
+                        y: predictions.test.predicted[i]
+                    })),
+                    backgroundColor: 'rgba(102, 126, 234, 0.5)',
+                    borderColor: 'rgba(102, 126, 234, 1)',
+                }]
+            },            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Actual vs Predicted Values'
+                    },
+                    legend: {
+                        display: true
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Actual Values'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Predicted Values'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function createResidualPlot(predictions) {
+        const ctx = document.getElementById('residualChart');
+    
+    // Calculate residuals
+    const residuals = predictions.test.actual.map((actual, i) => 
+        actual - predictions.test.predicted[i]
+    );
+
+    // Destroy existing chart if any
+    if (window.residualChart instanceof Chart) {
+        window.residualChart.destroy();
+    }
+
+        window.residualChart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Residuals',
+                    data: predictions.test.predicted.map((pred, i) => ({
+                        x: pred,
+                        y: residuals[i]
+                    })),
+                    backgroundColor: 'rgba(118, 75, 162, 0.5)',
+                    borderColor: 'rgba(118, 75, 162, 1)',
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Residual Plot'
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Predicted Values'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Residuals'
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
